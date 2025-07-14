@@ -1,0 +1,117 @@
+/* ===== RESET ===== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f6f9;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* ===== FORM CONTAINER ===== */
+  .auth-container {
+    background: #ffffff;
+    padding: 40px 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+  
+  .auth-container h2 {
+    margin-bottom: 24px;
+    color: #0a3d62;
+    font-size: 1.8rem;
+  }
+  
+  /* ===== INPUT FIELDS ===== */
+  .auth-container input {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+  }
+  
+  .auth-container input:focus {
+    border-color: #0a3d62;
+    outline: none;
+  }
+  
+  /* ===== BUTTON ===== */
+  .auth-container button {
+    width: 100%;
+    padding: 12px;
+    background-color: #0a3d62;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.3s ease;
+  }
+
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #333;
+    transition: border 0.3s ease;
+  }
+  
+  select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+  }
+  
+  select option {
+    padding: 10px;
+    font-size: 1rem;
+  }
+  
+  
+  .auth-container button:hover {
+    background-color: #064173;
+  }
+  
+  /* ===== LINKS ===== */
+  .auth-container p {
+    margin-top: 16px;
+    font-size: 0.95rem;
+  }
+  
+  .auth-container a {
+    color: #0a3d62;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .auth-container a:hover {
+    text-decoration: underline;
+  }
+  
+  /* ===== ERROR MESSAGE ===== */
+  .auth-container .error {
+    color: red;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+  }
+  
