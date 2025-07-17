@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../includes/db_connect.php';
+include 'includes/db_connect.php';
 
 // Redirect if user not logged in
 if (!isset($_SESSION['users'])) {
@@ -25,12 +25,12 @@ $check->execute();
 $res = $check->get_result();
 
 if ($res->num_rows > 0) {
-    // Already enrolled, redirect to lesson details with message
+    // ✅ Already enrolled: go to lesson details
     header("Location: lesson_details.php?lesson_id=$lesson_id&status=already_enrolled");
     exit();
 }
 
-// Get lesson details
+// Fetch lesson details
 $stmt = $conn->prepare("SELECT * FROM lessons WHERE id = ?");
 $stmt->bind_param("i", $lesson_id);
 $stmt->execute();
@@ -41,11 +41,11 @@ if (!$lesson) {
     exit();
 }
 
-// Check fee_type for free or paid lesson
-// Assuming fee_type is stored as 'Free' or 'Paid' in the DB as string
-if (strtolower($lesson['fee_type']) === 'free') {
-    // Free lesson: enroll immediately
-    $payment_status = 'Paid'; // mark as paid since no payment needed
+$fee_type = strtolower($lesson['fee_type'] ?? 'paid'); // default to paid if not set
+
+if ($fee_type === 'free') {
+    // ✅ Free lesson: enroll directly
+    $payment_status = 'Paid'; // Free = no payment needed
 
     $insert = $conn->prepare("INSERT INTO enrollments (full_name, email, lesson_id, enrolled_at, payment_status) VALUES (?, ?, ?, NOW(), ?)");
     $insert->bind_param("ssis", $full_name, $email, $lesson_id, $payment_status);
@@ -57,7 +57,7 @@ if (strtolower($lesson['fee_type']) === 'free') {
         exit();
     }
 } else {
-    // Paid lesson: redirect to payment page
+    // ✅ Paid lesson: user is not yet enrolled, send to pay
     header("Location: pay_lesson.php?lesson_id=$lesson_id");
     exit();
 }

@@ -1,121 +1,127 @@
 <?php
 session_start();
 include 'includes/db_connect.php';
+include 'includes/header.php';
 
-// Get URL parameters
 $tx_ref = $_GET['tx_ref'] ?? '';
-$lesson_id = $_GET['lesson_id'] ?? null;
-$order_id = $_GET['order_id'] ?? null;
+$lesson_id = isset($_GET['lesson_id']) ? intval($_GET['lesson_id']) : 0;
+$order_id  = isset($_GET['order_id'])  ? intval($_GET['order_id'])  : 0;
 
-if (!$tx_ref) {
-    die("Transaction reference is missing.");
-}
+$userName = $_SESSION['users']['name'] ?? 'User';
+$type = '';
+$title = '';
+$backLink = '#';
 
-// Fetch payment info for display and validation
-$stmt = $conn->prepare("SELECT * FROM payments WHERE transaction_id = ?");
-$stmt->bind_param("s", $tx_ref);
-$stmt->execute();
-$payment = $stmt->get_result()->fetch_assoc();
-$stmt->close();
-
-if (!$payment) {
-    die("Payment not found.");
-}
-
-// Get user email for welcome message
-$userEmail = $payment['email'] ?? '';
-
-// Prepare info message
-$message = "";
-if ($lesson_id) {
-    // Fetch lesson title for confirmation
+// 🟩 LESSON Payment
+if ($lesson_id > 0) {
     $stmt = $conn->prepare("SELECT title FROM lessons WHERE id = ?");
     $stmt->bind_param("i", $lesson_id);
     $stmt->execute();
-    $lesson = $stmt->get_result()->fetch_assoc();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        $title = $row['title'];
+        $type = 'lesson';
+        $backLink = 'lessons.php';
+    }
     $stmt->close();
-
-    $lessonTitle = $lesson['title'] ?? "Your lesson";
-
-    $message = "Thank you! Your payment for <strong>" . htmlspecialchars($lessonTitle) . "</strong> was successful. You are now enrolled.";
 }
-elseif ($order_id) {
-    // Fetch service name for confirmation
-    $stmt = $conn->prepare("SELECT s.name FROM orders o JOIN services s ON o.service_id = s.id WHERE o.id = ?");
+
+// 🟦 ORDER Payment
+elseif ($order_id > 0) {
+    $stmt = $conn->prepare("
+        SELECT s.name AS service_name 
+        FROM orders o 
+        JOIN services s ON o.service_id = s.id 
+        WHERE o.id = ?
+    ");
     $stmt->bind_param("i", $order_id);
     $stmt->execute();
-    $order = $stmt->get_result()->fetch_assoc();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        $title = $row['service_name']; // will now be like "Photocopying and printing"
+        $type = 'order';
+        $backLink = 'status.php';
+    } else {
+        $title = "Unknown Service";
+    }
     $stmt->close();
-
-    $serviceName = $order['name'] ?? "your service order";
-
-    $message = "Thank you! Your payment for <strong>" . htmlspecialchars($serviceName) . "</strong> has been received. Your order is now confirmed.";
 }
-else {
-    $message = "Thank you! Your payment was successful.";
-}
+
+
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Payment Success | Smart Printing</title>
-  <link rel="stylesheet" href="/smart-printing-system/assets/css/style.css" />
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-image: url('/smart-printing-system/assets/images/Background.jpeg');
-      background-size: cover;
-      background-position: center;
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .success-container {
-      background: #fff;
-      padding: 30px 40px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-      max-width: 500px;
-      text-align: center;
-    }
-
-    .success-container h1 {
-      color: #0a3d62;
-      margin-bottom: 20px;
-    }
-
-    .success-container p {
-      font-size: 1.2rem;
-      margin-bottom: 30px;
-    }
-
-    a.button {
-      text-decoration: none;
-      background-color: #0a3d62;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: background-color 0.3s;
-    }
-
-    a.button:hover {
-      background-color: #064173;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Payment Successful</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f9f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header, footer {
+            background-color: #0a3d62;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        main {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .success-box {
+            text-align: center;
+            background: white;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+            max-width: 500px;
+        }
+        .success-box h1 {
+            color: green;
+            margin-bottom: 10px;
+        }
+        .success-box p {
+            font-size: 1.1rem;
+            margin: 10px 0;
+        }
+        .success-box a {
+            margin-top: 20px;
+            display: inline-block;
+            background: #0a3d62;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .success-box a:hover {
+            background-color: #064173;
+        }
+    </style>
 </head>
 <body>
-  <div class="success-container">
-    <h1>Payment Successful!</h1>
-    <p><?= $message ?></p>
-    <a href="/smart-printing-system/user/lessons/lessons.php" class="button">Go to Lessons</a>
-    <br><br>
-    <a href="/smart-printing-system/user/services.php" class="button" style="background-color: #28a745;">View Services</a>
-  </div>
+
+<main>
+<div class="success-box">
+    <h1>✅ Payment Successful</h1>
+   <p><strong><?= htmlspecialchars($userName) ?></strong>, your payment for the
+    <?= $type === 'lesson' ? 'lesson' : ($type === 'order' ? 'service order' : 'item') ?>:</p>
+<p><strong>"<?= htmlspecialchars($title ?: 'N/A') ?>"</strong></p>
+    <p>was successful!</p>
+    <p>Transaction Ref: <strong><?= htmlspecialchars($tx_ref) ?></strong></p>
+    <a href="<?= $backLink ?>">🔙 Go Back</a>
+</div>
+</main>
+
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

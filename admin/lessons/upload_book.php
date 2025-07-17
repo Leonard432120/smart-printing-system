@@ -1,7 +1,8 @@
 <?php
 session_start();
-include '../../includes/db_connect.php';
-include '../includes/functions.php';
+
+require_once __DIR__ . '/../../user/includes/db_connect.php';
+require_once '../includes/functions.php';
 
 if (!isset($_SESSION['users']) || strtolower($_SESSION['users']['role']) !== 'admin') {
     header("Location: ../login.php");

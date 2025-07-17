@@ -1,0 +1,195 @@
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: ORD_68764f2ae0139_1752583978
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_68761dc8d4d97_1752571336
+RESPONSE:
+
+ERROR:
+SSL certificate problem: unable to get local issuer certificate
+TX_REF: TX_6876f7f52198e_1752627189
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_6876f778a0f4b_1752627064
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_6876f672c8202_1752626802
+RESPONSE:
+{"status":"success","message":"Payment details retrieved successfully.","data":{"event_type":"checkout.payment","tx_ref":"TX_6876f672c8202_1752626802","mode":"test","type":"API Payment (Checkout)","status":"success","number_of_attempts":1,"reference":"13543578182","currency":"MWK","amount":2000,"charges":60,"customization":{"title":"Lesson Payment - COMPUTER BASICS","description":"Payment for COMPUTER BASICS lesson","logo":null},"meta":{"lesson_id":"1","response":"Pending"},"authorization":{"channel":"Test","card_number":null,"expiry":null,"brand":null,"provider":null,"mobile_number":null,"completed_at":"2025-07-15T23:46:36.000000Z"},"customer":{"email":"ict-01-22-22@unilia.ac.mw","first_name":"Leonardponje","last_name":"mlungu"},"logs":[],"created_at":"2025-07-15T23:46:08.000000Z","updated_at":"2025-07-15T23:46:08.000000Z"}}
+ERROR:
+
+TX_REF: ORD_6876f046b8b9c_1752625222
+RESPONSE:
+{"status":"success","message":"Payment details retrieved successfully.","data":{"event_type":"checkout.payment","tx_ref":"ORD_6876f046b8b9c_1752625222","mode":"test","type":"API Payment (Checkout)","status":"success","number_of_attempts":1,"reference":"95774158919","currency":"MWK","amount":6000,"charges":180,"customization":{"title":"Payment for Logo Creation","description":"Smart Printing Service Payment","logo":null},"meta":{"order_id":9,"source":"smart_printing_order"},"authorization":{"channel":"Test","card_number":null,"expiry":null,"brand":null,"provider":null,"mobile_number":null,"completed_at":"2025-07-15T23:20:39.000000Z"},"customer":{"email":"ict-01-22-22@unilia.ac.mw","first_name":"Leonardponje","last_name":"mlungu"},"logs":[],"created_at":"2025-07-15T23:19:48.000000Z","updated_at":"2025-07-15T23:19:48.000000Z"}}
+ERROR:
+
+TX_REF: TX_6876f7f52198e_1752627189
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_6876f778a0f4b_1752627064
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_6878a66e582d1_1752737390
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_68789e6348f25_1752735331
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_68789bc0131cc_1752734656
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_6878948c862f7_1752732812
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_68776a6dd7201_1752656493
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_68776604b9c3c_1752655364
+RESPONSE:
+{"status":"success","message":"Payment details retrieved successfully.","data":{"event_type":"checkout.payment","tx_ref":"TX_68776604b9c3c_1752655364","mode":"test","type":"API Payment (Checkout)","status":"success","number_of_attempts":1,"reference":"39898887476","currency":"MWK","amount":2000,"charges":60,"customization":{"title":"Lesson Payment - COMPUTER BASICS","description":"Payment for COMPUTER BASICS lesson","logo":null},"meta":{"lesson_id":"1","response":"Pending"},"authorization":{"channel":"Test","card_number":null,"expiry":null,"brand":null,"provider":null,"mobile_number":null,"completed_at":"2025-07-16T08:58:04.000000Z"},"customer":{"email":"leonardponjemlungu@gmail.com","first_name":"Leonardponje","last_name":"mlungu"},"logs":[],"created_at":"2025-07-16T08:50:53.000000Z","updated_at":"2025-07-16T08:50:53.000000Z"}}
+ERROR:
+
+TX_REF: TX_687765f703b72_1752655351
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_68775dc3d0ebe_1752653251
+RESPONSE:
+{"status":"success","message":"Payment details retrieved successfully.","data":{"event_type":"checkout.payment","tx_ref":"TX_68775dc3d0ebe_1752653251","mode":"test","type":"API Payment (Checkout)","status":"success","number_of_attempts":1,"reference":"32245096197","currency":"MWK","amount":2000,"charges":60,"customization":{"title":"Lesson Payment - COMPUTER BASICS","description":"Payment for COMPUTER BASICS lesson","logo":null},"meta":{"lesson_id":"1","response":"Pending"},"authorization":{"channel":"Test","card_number":null,"expiry":null,"brand":null,"provider":null,"mobile_number":null,"completed_at":"2025-07-16T08:08:52.000000Z"},"customer":{"email":"leonardponjemlungu@gmail.com","first_name":"Leonardponje","last_name":"mlungu"},"logs":[],"created_at":"2025-07-16T08:07:47.000000Z","updated_at":"2025-07-16T08:07:47.000000Z"}}
+ERROR:
+

@@ -1,0 +1,49 @@
+"Mungu Ni Dawa System Report","Generated on 2025-07-16 01:31:26"
+
+Summary
+"Total Users",2
+"Total Transactions",10
+"Total Revenue (MWK)",0.00
+"Completed Transactions",0
+"Pending Transactions",2
+"Failed Transactions",0
+"Success Transactions",8
+"Total Lessons",1
+"Total Orders",6
+"Total Enrollments",2
+
+Users
+ID,Username,Email,Role,Orders,Enrollments,"Created At"
+2,Admin12,leonardponjemlungu@gmail.com,Admin,0,0,"2025-07-15 10:01"
+1,leonard123,ict-01-22-22@unilia.ac.mw,User,6,1,"2025-07-15 08:04"
+
+Transactions
+"Transaction ID",Email,Order/Lesson,"Customer Name",Phone,Amount,Status,"Payment Date",Confirmed
+TX_6876f7f52198e_1752627189,ict-01-22-22@unilia.ac.mw,"Lesson: COMPUTER BASICS",N/A,N/A,"MWK 2,000.00",pending,"2025-07-16 01:53",No
+TX_6876f778a0f4b_1752627064,ict-01-22-22@unilia.ac.mw,"Lesson: COMPUTER BASICS",N/A,N/A,"MWK 2,000.00",pending,"2025-07-16 01:51",No
+TX_6876f672c8202_1752626802,ict-01-22-22@unilia.ac.mw,"Lesson: COMPUTER BASICS",N/A,N/A,"MWK 2,000.00",success,"2025-07-16 01:46",Yes
+ORD_6876f046b8b9c_1752625222,ict-01-22-22@unilia.ac.mw,"Order #9 (Logo Creation)","Leonardponje mlungu",+265984487611,"MWK 6,000.00",success,"2025-07-16 01:20",Yes
+TX_6876f6d5daac9_1752626901,ict-01-22-22@unilia.ac.mw,"Lesson: COMPUTER BASICS",N/A,N/A,"MWK 2,000.00",success,"2025-07-16 00:50",Yes
+ORD_6876f4b60cb72_1752626358,ict-01-22-22@unilia.ac.mw,"Order #10 (Logo Creation)","Leonardponje mlungu",+265984487611,"MWK 6,000.00",success,"2025-07-16 00:40",Yes
+ORD_6876f22e29d40_1752625710,ict-01-22-22@unilia.ac.mw,"Order #10 (Logo Creation)","Leonardponje mlungu",+265984487611,"MWK 6,000.00",success,"2025-07-16 00:29",Yes
+ORD_6876f0f6d3539_1752625398,ict-01-22-22@unilia.ac.mw,"Order #10 (Logo Creation)","Leonardponje mlungu",+265984487611,"MWK 6,000.00",success,"2025-07-16 00:25",Yes
+ORD_6876e93b15ce0_1752623419,ict-01-22-22@unilia.ac.mw,"Order #7 (Computer Lessons)","Leonardponje mlungu",+265984487611,"MWK 800.00",success,"2025-07-15 23:51",Yes
+ORD_6876e859dcfe1_1752623193,ict-01-22-22@unilia.ac.mw,"Order #6 (Photocopying and printing)","Leonardponje mlungu",+265984487611,"MWK 4,500.00",success,"2025-07-15 23:48",Yes
+
+Lessons
+ID,Title,"Fee (MWK)","Duration (Weeks)",Enrollments,"Created At"
+1,"COMPUTER BASICS","MWK 2,000.00",5,2,"2025-07-15 10:12"
+
+Orders
+ID,"User ID",Service,"Customer Name",Email,Phone,Status,"Created At"
+10,1,"Logo Creation","Leonardponje mlungu",ict-01-22-22@unilia.ac.mw,+265984487611,Processing,"2025-07-16 01:23"
+9,1,"Logo Creation","Leonardponje mlungu",ict-01-22-22@unilia.ac.mw,+265984487611,pending,"2025-07-16 01:03"
+8,1,"Logo Creation","Leonardponje mlungu",ict-01-22-22@unilia.ac.mw,+265984487611,pending,"2025-07-16 01:00"
+7,1,"Computer Lessons","Leonardponje mlungu",ict-01-22-22@unilia.ac.mw,+265984487611,pending,"2025-07-16 00:50"
+6,1,"Photocopying and printing","Leonardponje mlungu",ict-01-22-22@unilia.ac.mw,+265984487611,pending,"2025-07-16 00:46"
+5,1,"Photocopying and printing","Leonardponje mlungu",ict-01-22-22@unilia.ac.mw,+265984487611,pending,"2025-07-16 00:42"
+
+Enrollments
+ID,"Full Name",Email,Lesson,"Payment Status","Enrolled At"
+2,"Leonardponje mlungu",ict-01-22-22@unilia.ac.mw,"COMPUTER BASICS",Pending,"2025-07-15 14:25"
+1,"Leonardponje mlungu",ict-01-25-22@unilia.ac.mw,"COMPUTER BASICS",Pending,"2025-07-15 14:06"

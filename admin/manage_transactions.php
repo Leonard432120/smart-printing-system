@@ -22,8 +22,8 @@ if ($settingsResult && $settingsResult->num_rows > 0) {
 }
 
 // Module 3: PayChangu API Verification Function
-function verifyPaymentStatus($transaction_id, $configFile) {
-    include $configFile;
+function verifyPaymentStatus($transaction_id) {
+    include_once __DIR__ . '/../config/config.php';
     $secret = defined('PAYCHANGU_API_KEY') ? PAYCHANGU_API_KEY : '';
     $url = "https://api.paychangu.com/verify-payment/$transaction_id";
 

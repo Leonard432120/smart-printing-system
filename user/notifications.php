@@ -10,7 +10,7 @@ include 'includes/db_connect.php';
 $user_contact = $_SESSION['users']['email']; // or phone
 
 // Fetch notifications
-$stmt = $conn->prepare("SELECT * FROM notifications WHERE recipient_contact = ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT * FROM notifications WHERE recipient_email = ? ORDER BY created_at DESC");
 $stmt->bind_param("s", $user_contact);
 $stmt->execute();
 $result = $stmt->get_result();

@@ -17,8 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         // Add Service
         if ($_POST['action'] === 'add_service') {
-            $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_STRING);
-            $price = filter_input(INPUT_POST, 'price', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+         $name = htmlspecialchars(trim($_POST['name']));
+          $price = filter_input(INPUT_POST, 'price', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
             
             // Handle image upload
             $image = '';

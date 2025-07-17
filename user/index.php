@@ -26,7 +26,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <?php if (isset($_SESSION['users'])): ?>
       <p style="font-weight: bold;">👋 Hello, <?= htmlspecialchars($_SESSION['users']['name']) ?>!</p>
     <?php else: ?>
-      <p><a href="/smart-printing-system/login.php">🔐 Login</a> to access more features.</p>
+      <p><a href="/smart-printing-system/admin/login.php" class="login-btn">Login</a> to access more features.</p>
     <?php endif; ?>
 
     <ul class="hero-features">
@@ -56,7 +56,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <div class="hero-buttons">
       <a href="upload.php">📤 Upload Document</a>
       <a href="status.php">📈 Track Status</a>
-      <a href="lessons/lessons.php">📚 Enroll in Lesson</a>
+      <a href="lessons.php">📚 Enroll in Lesson</a>
       <a href="https://wa.me/265984487611?text=Hi%20Smart%20Printing%2C%20I%20need%20help%20with%20printing" target="_blank" rel="noopener noreferrer">
         💬 WhatsApp Us
       </a>

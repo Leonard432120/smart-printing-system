@@ -1,7 +1,7 @@
 <?php
 // Module 1: Session and Dependencies
 session_start();
-include '../user/interfaces/db_connect.php';
+include '../user/includes/db_connect.php';
 include 'includes/functions.php';
 
 // Restrict access to admin only

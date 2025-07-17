@@ -23,6 +23,7 @@ include 'includes/load_settings.php';
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
+  
   <div class="admin-wrapper">
     <!-- Sidebar (kept as provided) -->
     <div class="sidebar">
@@ -37,6 +38,7 @@ include 'includes/load_settings.php';
       <a href="manage_students.php"><i class="fas fa-user-graduate"></i> Students</a>
       <a href="manage_transactions.php"><i class="fas fa-credit-card"></i> Transactions</a>
       <a href="manage_users.php"><i class="fas fa-users"></i> Users</a>
+      <a href="lessons/class.php"><i class="fas fa-chart-line"></i> Classes</a>
       <a href="reports.php"><i class="fas fa-chart-line"></i> Reports</a>
       <a href="settings.php"><i class="fas fa-cog"></i> Settings</a>
       <a href="logout.php" style="color: red;" onclick="return confirm('Are you sure you want to logout?');"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -59,7 +61,7 @@ include 'includes/load_settings.php';
       $totalUsers = $conn->query("SELECT COUNT(*) AS count FROM users")->fetch_assoc()['count'];
       $totalOrders = $conn->query("SELECT COUNT(*) AS count FROM orders")->fetch_assoc()['count'];
       $totalLessons = $conn->query("SELECT COUNT(*) AS count FROM lessons")->fetch_assoc()['count'];
-      $totalPayments = $conn->query("SELECT SUM(amount) AS total FROM payments WHERE status = 'Paid'")->fetch_assoc()['total'] ?? 0;
+      $totalPayments = $conn->query("SELECT SUM(amount) AS total FROM payments WHERE status = 'success'")->fetch_assoc()['total'] ?? 0;
       ?>
 
       <div class="stats-grid">

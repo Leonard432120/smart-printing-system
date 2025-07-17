@@ -1,0 +1,5 @@
+TX_REF: ORD_6876e93b15ce0_1752623419
+RESPONSE:
+{"status":"success","message":"Payment details retrieved successfully.","data":{"event_type":"checkout.payment","tx_ref":"ORD_6876e93b15ce0_1752623419","mode":"test","type":"API Payment (Checkout)","status":"success","number_of_attempts":1,"reference":"68235825712","currency":"MWK","amount":800,"charges":24,"customization":{"title":"Payment for Computer Lessons","description":"Smart Printing Service Payment","logo":null},"meta":{"order_id":7,"source":"smart_printing_order"},"authorization":{"channel":"Test","card_number":null,"expiry":null,"brand":null,"provider":null,"mobile_number":null,"completed_at":"2025-07-15T22:50:08.000000Z"},"customer":{"email":"ict-01-22-22@unilia.ac.mw","first_name":"Leonardponje","last_name":"mlungu"},"logs":[],"created_at":"2025-07-15T22:49:42.000000Z","updated_at":"2025-07-15T22:49:42.000000Z"}}
+ERROR:
+

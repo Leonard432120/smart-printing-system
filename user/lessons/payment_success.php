@@ -1,28 +1,53 @@
 <?php
 session_start();
-include '../includes/db_connect.php';
-include '../includes/header.php';
+include 'includes/db_connect.php';
+include 'includes/header.php';
 
 $tx_ref = $_GET['tx_ref'] ?? '';
 $lesson_id = isset($_GET['lesson_id']) ? intval($_GET['lesson_id']) : 0;
-$userName = $_SESSION['users']['name'] ?? '';
+$order_id  = isset($_GET['order_id'])  ? intval($_GET['order_id'])  : 0;
 
-// Validate tx_ref and lesson_id
-if (!$tx_ref || !$lesson_id) {
-    echo "<p style='color:red; text-align:center;'>Invalid transaction or lesson.</p>";
-    exit;
+$userName = $_SESSION['users']['name'] ?? 'User';
+$type = '';
+$title = '';
+$backLink = '#';
+
+// 🟩 LESSON Payment
+if ($lesson_id > 0) {
+    $stmt = $conn->prepare("SELECT title FROM lessons WHERE id = ?");
+    $stmt->bind_param("i", $lesson_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        $title = $row['title'];
+        $type = 'lesson';
+        $backLink = 'lessons.php';
+    }
+    $stmt->close();
 }
 
-// Fetch lesson title
-$lessonTitle = "Lesson";
-$stmt = $conn->prepare("SELECT title FROM lessons WHERE id = ?");
-$stmt->bind_param("i", $lesson_id);
-$stmt->execute();
-$res = $stmt->get_result();
-if ($row = $res->fetch_assoc()) {
-    $lessonTitle = $row['title'];
+// 🟦 ORDER Payment
+elseif ($order_id > 0) {
+    $stmt = $conn->prepare("
+        SELECT s.name AS service_name 
+        FROM orders o 
+        JOIN services s ON o.service_id = s.id 
+        WHERE o.id = ?
+    ");
+    $stmt->bind_param("i", $order_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        $title = $row['service_name']; // will now be like "Photocopying and printing"
+        $type = 'order';
+        $backLink = 'status.php';
+    } else {
+        $title = "Unknown Service";
+    }
+    $stmt->close();
 }
-$stmt->close();
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -88,14 +113,15 @@ $stmt->close();
 <main>
 <div class="success-box">
     <h1>✅ Payment Successful</h1>
-    <p><strong><?= htmlspecialchars($userName) ?></strong>, your payment for the lesson:</p>
-    <p><strong>"<?= htmlspecialchars($lessonTitle) ?>"</strong></p>
+   <p><strong><?= htmlspecialchars($userName) ?></strong>, your payment for the
+    <?= $type === 'lesson' ? 'lesson' : ($type === 'order' ? 'service order' : 'item') ?>:</p>
+<p><strong>"<?= htmlspecialchars($title ?: 'N/A') ?>"</strong></p>
     <p>was successful!</p>
     <p>Transaction Ref: <strong><?= htmlspecialchars($tx_ref) ?></strong></p>
-    <a href="lessons.php">📘 Go Back to Lessons</a>
+    <a href="<?= $backLink ?>">🔙 Go Back</a>
 </div>
 </main>
 
-<?php include '../includes/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

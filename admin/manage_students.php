@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require '/opt/lampp/htdocs/smart-printing-system/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 // Start session and includes
 session_start();
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (empty($full_name)) {
                 $statusMsg = "Full name is required.";
             } else {
-                $stmt = $conn->prepare("UPDATE enrollments SET full_name = ?, email = ?, payment_status = ? WHERE id = ?");
+                $stmt = $conn->prepare("UPDATE enrollments SET full_name = ?, email = ?, status = ? WHERE id = ?");
                 $stmt->bind_param("sssi", $full_name, $email, $payment_status, $id);
                 if ($stmt->execute()) {
                     $statusMsg = "Enrollment updated successfully!";
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // Insert notification record for user
                     $notifMsg = "Your enrollment details were updated by admin.";
-                    $stmtNotif = $conn->prepare("INSERT INTO notifications (type, recipient_contact, message, sent) VALUES (?, ?, ?, 0)");
+                    $stmtNotif = $conn->prepare("INSERT INTO notifications (type, recipient_email, message, is_read) VALUES (?, ?, ?, 0)");
                     $notifType = "Enrollment Update";
                     $stmtNotif->bind_param("sss", $notifType, $email, $notifMsg);
                     $stmtNotif->execute();
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Insert notification record for user
                 $notifMsg = "Your enrollment was deleted by admin.";
-                $stmtNotif = $conn->prepare("INSERT INTO notifications (type, recipient_contact, message, sent) VALUES (?, ?, ?, 0)");
+                $stmtNotif = $conn->prepare("INSERT INTO notifications (type, recipient_email, message, is_read) VALUES (?, ?, ?, 0)");
                 $notifType = "Enrollment Deletion";
                 $stmtNotif->bind_param("sss", $notifType, $enrollmentInfo['email'], $notifMsg);
                 $stmtNotif->execute();
@@ -147,31 +147,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         // Attendance Marking
         elseif ($_POST['action'] === 'mark_attendance') {
-            $enrollment_id = filter_input(INPUT_POST, 'enrollment_id', FILTER_VALIDATE_INT);
+            $user_id = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
             $lesson_id = filter_input(INPUT_POST, 'lesson_id', FILTER_VALIDATE_INT);
             $attendance_status = $_POST['attendance_status'] ?? 'Absent'; // Default Absent
-            $attendance_date = date('Y-m-d');
 
             if (!in_array($attendance_status, ['Present', 'Absent'])) {
                 $statusMsg = "Invalid attendance status.";
             } else {
-                // Insert or update attendance record
+                $attendance_date = date('Y-m-d');
+
                 // Check if record exists for today
-                $stmtCheck = $conn->prepare("SELECT id FROM attendance WHERE enrollment_id = ? AND lesson_id = ? AND attendance_date = ?");
-                $stmtCheck->bind_param("iis", $enrollment_id, $lesson_id, $attendance_date);
+                $stmtCheck = $conn->prepare("SELECT id FROM attendance WHERE user_id = ? AND lesson_id = ? AND DATE(attended_at) = ?");
+                $stmtCheck->bind_param("iis", $user_id, $lesson_id, $attendance_date);
                 $stmtCheck->execute();
                 $resultCheck = $stmtCheck->get_result();
 
                 if ($resultCheck->num_rows > 0) {
                     // Update existing record
                     $attendanceId = $resultCheck->fetch_assoc()['id'];
-                    $stmtUpd = $conn->prepare("UPDATE attendance SET status = ? WHERE id = ?");
+                    $stmtUpd = $conn->prepare("UPDATE attendance SET status = ?, attended_at = NOW() WHERE id = ?");
                     $stmtUpd->bind_param("si", $attendance_status, $attendanceId);
                     $stmtUpd->execute();
                 } else {
                     // Insert new record
-                    $stmtIns = $conn->prepare("INSERT INTO attendance (enrollment_id, lesson_id, attendance_date, status) VALUES (?, ?, ?, ?)");
-                    $stmtIns->bind_param("iiss", $enrollment_id, $lesson_id, $attendance_date, $attendance_status);
+                    $stmtIns = $conn->prepare("INSERT INTO attendance (user_id, lesson_id, attended_at, status) VALUES (?, ?, NOW(), ?)");
+                    $stmtIns->bind_param("iis", $user_id, $lesson_id, $attendance_status);
                     $stmtIns->execute();
                 }
                 $statusMsg = "Attendance marked as $attendance_status.";
@@ -183,9 +183,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // === Module 3: Fetch Enrollments ===
 $enrollments = [];
 $result = $conn->query("
-    SELECT e.id, e.full_name, e.email, e.lesson_id, e.payment_status, e.enrolled_at,
-           l.title AS lesson_title
+    SELECT e.id, u.name AS full_name, e.email, e.lesson_id, e.status AS payment_status, e.enrolled_at,
+       l.title AS lesson_title
     FROM enrollments e
+    JOIN users u ON e.user_id = u.id
     JOIN lessons l ON e.lesson_id = l.id
     ORDER BY e.enrolled_at DESC
 ");
@@ -195,24 +196,24 @@ while ($row = $result->fetch_assoc()) {
 
 // === Module 4: Fetch Notifications for admin dashboard ===
 $notifications = [];
-$notifResult = $conn->query("SELECT id, type, recipient_contact, message, sent, created_at FROM notifications WHERE sent = 0 ORDER BY created_at DESC LIMIT 10");
+$notifResult = $conn->query("SELECT id, type, recipient_email, message, is_read, created_at FROM notifications WHERE is_read = 0 ORDER BY created_at DESC LIMIT 10");
 while ($notif = $notifResult->fetch_assoc()) {
     $notifications[] = $notif;
 }
 
 // === Module 5: Fetch Attendance Records for display ===
 $attendanceRecords = [];
-$attResult = $conn->query("SELECT a.id, a.enrollment_id, a.lesson_id, a.attendance_date, a.status, a.recorded_at,
-    e.full_name, l.title 
+$attResult = $conn->query("
+    SELECT a.id, a.user_id, a.lesson_id, DATE(a.attended_at) AS attendance_date, a.status,
+           u.name AS full_name, l.title
     FROM attendance a 
-    JOIN enrollments e ON a.enrollment_id = e.id
+    JOIN users u ON a.user_id = u.id
     JOIN lessons l ON a.lesson_id = l.id
-    ORDER BY a.attendance_date DESC, e.full_name ASC
+    ORDER BY a.attended_at DESC, u.name ASC
 ");
 while ($att = $attResult->fetch_assoc()) {
     $attendanceRecords[] = $att;
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -290,6 +291,62 @@ while ($att = $attResult->fetch_assoc()) {
         .action-links a.delete {
             color: #e74c3c;
         }
+        /* Edit form container inside table cell */
+.form-container {
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 600px;
+  margin: 10px auto;
+  box-sizing: border-box;
+}
+
+/* Make form inputs full width */
+.form-container input[type="text"],
+.form-container input[type="email"],
+.form-container select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+/* Buttons side by side on desktop, stacked on mobile */
+.form-container button {
+  padding: 10px 20px;
+  font-weight: bold;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.form-container button[type="submit"] {
+  background-color: #3498db;
+  color: white;
+}
+
+.form-container button[type="button"] {
+  background-color: #ccc;
+  color: #333;
+}
+
+/* Stack buttons vertically on small screens */
+@media (max-width: 480px) {
+  .form-container {
+    max-width: 100%;
+    margin: 10px 0;
+  }
+  .form-container button {
+    display: block;
+    width: 100%;
+    margin: 8px 0 0 0;
+  }
+}
+
     </style>
 </head>
 <body>
@@ -350,7 +407,7 @@ while ($att = $attResult->fetch_assoc()) {
                             <?php foreach ($notifications as $notif): ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($notif['type'] ?? ''); ?></td>
-                                    <td><?php echo htmlspecialchars($notif['recipient_contact'] ?? ''); ?></td>
+                                    <td><?php echo htmlspecialchars($notif['recipient_email'] ?? ''); ?></td>
                                     <td><?php echo htmlspecialchars($notif['message'] ?? ''); ?></td>
                                     <td><?php echo htmlspecialchars($notif['created_at'] ?? ''); ?></td>
                                 </tr>
@@ -386,18 +443,16 @@ while ($att = $attResult->fetch_assoc()) {
                                     <td><?php echo htmlspecialchars($enrollment['email']); ?></td>
                                     <td><?php echo htmlspecialchars($enrollment['lesson_title']); ?></td>
                                     <td><?php echo htmlspecialchars($enrollment['payment_status']); ?></td>
-                                    <td><?php echo date('Y-m-d H:i', strtotime($enrollment['enrolled_at'])); ?></td>
+                                    <td><?php echo htmlspecialchars($enrollment['enrolled_at']); ?></td>
                                     <td class="action-links">
-                                        <a href="#edit-<?php echo $enrollment['id']; ?>" onclick="showEditForm(<?php echo $enrollment['id']; ?>)">Edit</a>
-                                        <a href="#" class="delete" onclick="deleteEnrollment(<?php echo $enrollment['id']; ?>)">Delete</a>
-                                    </td>
-                                </tr>
-                                <!-- Edit Form Row -->
-                                <tr id="edit-<?php echo $enrollment['id']; ?>" style="display:none;">
-                                    <td colspan="7">
-                                        <div class="form-container">
-                                            <h3>Edit Enrollment</h3>
-                                            <form method="POST">
+                                        <!-- Edit Form Trigger -->
+                                        <a href="#" onclick="document.getElementById('edit-form-<?php echo $enrollment['id']; ?>').style.display='block';return false;" title="Edit Enrollment"><i class="fas fa-edit"></i></a>
+                                        <!-- Delete Form Trigger -->
+                                        <a href="#" onclick="if(confirm('Are you sure you want to delete this enrollment?')) { document.getElementById('delete-form-<?php echo $enrollment['id']; ?>').submit(); } return false;" class="delete" title="Delete Enrollment"><i class="fas fa-trash-alt"></i></a>
+                                        
+                                        <!-- Hidden Edit Form -->
+                                        <div id="edit-form-<?php echo $enrollment['id']; ?>" style="display:none; padding: 10px; background:#f9f9f9; border:1px solid #ccc; position:absolute; z-index:100; width: 350px;">
+                                            <form method="POST" onsubmit="return confirm('Save changes to this enrollment?');">
                                                 <input type="hidden" name="action" value="update_enrollment" />
                                                 <input type="hidden" name="id" value="<?php echo $enrollment['id']; ?>" />
                                                 <label>Full Name:</label>
@@ -406,18 +461,21 @@ while ($att = $attResult->fetch_assoc()) {
                                                 <input type="email" name="email" value="<?php echo htmlspecialchars($enrollment['email']); ?>" required />
                                                 <label>Payment Status:</label>
                                                 <select name="payment_status" required>
-                                                    <?php
-                                                    $statuses = ['Paid', 'Pending', 'Failed'];
-                                                    foreach ($statuses as $status) {
-                                                        $selected = ($enrollment['payment_status'] === $status) ? 'selected' : '';
-                                                        echo "<option value=\"$status\" $selected>$status</option>";
-                                                    }
-                                                    ?>
+                                                    <option value="Paid" <?php if ($enrollment['payment_status'] === 'Paid') echo 'selected'; ?>>Paid</option>
+                                                    <option value="Pending" <?php if ($enrollment['payment_status'] === 'Pending') echo 'selected'; ?>>Pending</option>
+                                                    <option value="Failed" <?php if ($enrollment['payment_status'] === 'Failed') echo 'selected'; ?>>Failed</option>
                                                 </select>
-                                                <button type="submit">Update Enrollment</button>
-                                                <button type="button" onclick="hideEditForm(<?php echo $enrollment['id']; ?>)">Cancel</button>
+                                                <br/><br/>
+                                                <button type="submit">Save</button>
+                                                <button type="button" onclick="document.getElementById('edit-form-<?php echo $enrollment['id']; ?>').style.display='none';">Cancel</button>
                                             </form>
                                         </div>
+
+                                        <!-- Hidden Delete Form -->
+                                        <form id="delete-form-<?php echo $enrollment['id']; ?>" method="POST" style="display:none;">
+                                            <input type="hidden" name="action" value="delete_enrollment" />
+                                            <input type="hidden" name="id" value="<?php echo $enrollment['id']; ?>" />
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -454,11 +512,11 @@ while ($att = $attResult->fetch_assoc()) {
                                     <td>
                                         <form method="POST" style="display:inline-block;">
                                             <input type="hidden" name="action" value="mark_attendance" />
-                                            <input type="hidden" name="enrollment_id" value="<?php echo $att['enrollment_id']; ?>" />
+                                            <input type="hidden" name="user_id" value="<?php echo $att['user_id']; ?>" />
                                             <input type="hidden" name="lesson_id" value="<?php echo $att['lesson_id']; ?>" />
                                             <select name="attendance_status" required>
-                                                <option value="Present" <?php echo ($att['status'] === 'Present') ? 'selected' : ''; ?>>Present</option>
-                                                <option value="Absent" <?php echo ($att['status'] === 'Absent') ? 'selected' : ''; ?>>Absent</option>
+                                                <option value="Present" <?php if ($att['status'] === 'Present') echo 'selected'; ?>>Present</option>
+                                                <option value="Absent" <?php if ($att['status'] === 'Absent') echo 'selected'; ?>>Absent</option>
                                             </select>
                                             <button type="submit">Update</button>
                                         </form>
@@ -470,39 +528,19 @@ while ($att = $attResult->fetch_assoc()) {
                 </table>
             </section>
 
-        </div> <!-- end main-content -->
-
-    </div> <!-- end admin-wrapper -->
+        </div>
+    </div>
 
     <script>
-        function showEditForm(id) {
-            document.getElementById('edit-' + id).style.display = 'table-row';
-        }
-        function hideEditForm(id) {
-            document.getElementById('edit-' + id).style.display = 'none';
-        }
-        function deleteEnrollment(id) {
-            if (confirm('Are you sure you want to delete this enrollment? This action cannot be undone.')) {
-                // Create a form to submit the deletion
-                var form = document.createElement('form');
-                form.method = 'POST';
-                form.style.display = 'none';
-
-                var actionInput = document.createElement('input');
-                actionInput.name = 'action';
-                actionInput.value = 'delete_enrollment';
-                form.appendChild(actionInput);
-
-                var idInput = document.createElement('input');
-                idInput.name = 'id';
-                idInput.value = id;
-                form.appendChild(idInput);
-
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
+        // Simple script to close edit forms if user clicks outside
+        document.addEventListener('click', function(event) {
+            var editForms = document.querySelectorAll('[id^="edit-form-"]');
+            editForms.forEach(function(form) {
+                if (!form.contains(event.target) && !event.target.matches('.fas.fa-edit')) {
+                    form.style.display = 'none';
+                }
+            });
+        });
     </script>
-
 </body>
 </html>

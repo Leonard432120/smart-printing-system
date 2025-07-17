@@ -1,7 +1,7 @@
 <?php
 session_start();
-include '../includes/db_connect.php';
-include '../includes/header.php';
+include 'includes/db_connect.php';
+include 'includes/header.php';
 
 // === Handle payment success message from PayChangu ===
 if (isset($_GET['tx_ref'])) {
@@ -190,7 +190,7 @@ if ($result) {
   <?php endforeach; ?>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>
 
 </body>
 </html>

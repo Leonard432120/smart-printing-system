@@ -2,8 +2,8 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 session_start();
-include '../includes/db_connect.php';
-include '../includes/header.php';
+include 'includes/db_connect.php';
+include 'includes/header.php';
 
 if (!isset($_SESSION['users'])) {
     header("Location: /smart-printing-system/admin/login.php");
@@ -113,31 +113,31 @@ $save->execute();
   </main>
 
   <script>
-    function makePayment() {
-      PaychanguCheckout({
-        public_key: "PUB-TEST-oE03zCv1gfBpYxE67GtCIfiiC3gPJ7I0", // Use live key in production
-        tx_ref: "<?= $tx_ref ?>",
-        amount: <?= $amount ?>,
-        currency: "MWK",
-        callback_url: "https://2b05bb958f64.ngrok-free.app/smart-printing-system/user/lessons/verify_transaction.php",
-        return_url: "https://2b05bb958f64.ngrok-free.app/smart-printing-system/user/lessons/payment_success.php",
-        customer: {
-          email: "<?= $email ?>",
-          first_name: "<?= explode(' ', $name)[0] ?>",
-          last_name: "<?= explode(' ', $name)[1] ?? '' ?>"
-        },
-        customization: {
-          title: "Lesson Payment - <?= addslashes($title) ?>",
-          description: "Payment for <?= addslashes($title) ?> lesson"
-        },
-        meta: {
-          lesson_id: "<?= $lesson_id ?>",
-          response: "Pending"
-        }
-      });
-    }
-  </script>
+  function makePayment() {
+    PaychanguCheckout({
+      public_key: "PUB-TEST-oE03zCv1gfBpYxE67GtCIfiiC3gPJ7I0",
+      tx_ref: "<?= $tx_ref ?>",
+      amount: <?= $amount ?>,
+      currency: "MWK",
+      callback_url: "https://0b148b973f16.ngrok-free.app/smart-printing-system/user/verify_transaction.php",
+      return_url: "https://0b148b973f16.ngrok-free.app/smart-printing-system/user/payment_success.php",
+      customer: {
+        email: "<?= $email ?>",
+        first_name: "<?= explode(' ', $name)[0] ?>",
+        last_name: "<?= explode(' ', $name)[1] ?? '' ?>"
+      },
+      customization: {
+        title: "Lesson Payment - <?= addslashes($title) ?>",
+        description: "Payment for <?= addslashes($title) ?> lesson"
+      },
+      meta: {
+        lesson_id: "<?= $lesson_id ?>",
+        response: "Pending"
+      }
+    });
+  }
+</script>
 
-<?php include '../includes/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>

@@ -2,20 +2,13 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-require '/opt/lampp/htdocs/smart-printing-system/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 session_start();
 include '../user/includes/db_connect.php';
 include 'includes/functions.php';
 include 'includes/load_settings.php';
 
-// Restrict access to admin only
-if (!isset($_SESSION['users']) || strtolower($_SESSION['users']['role']) !== 'admin') {
-    header("Location: login.php");
-    exit();
-}
-
-// === Helper function: Send email notification with PHPMailer ===
 function sendNotificationEmailPHPMailer($toEmail, $toName, $subject, $body) {
     $mail = new PHPMailer(true);
     try {
@@ -47,15 +40,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($_POST['action'] === 'add_lesson') {
             $title = strip_tags(trim($_POST['title']));
             $description = strip_tags(trim($_POST['description']));
-            $objectives = strip_tags(trim($_POST['objectives'] ?? ''));
             $duration_weeks = filter_input(INPUT_POST, 'duration_weeks', FILTER_SANITIZE_NUMBER_INT);
             $fee_type = strip_tags(trim($_POST['fee_type']));
             $fee = ($fee_type === 'Free') ? 0 : filter_input(INPUT_POST, 'fee', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
             $instructor = strip_tags(trim($_POST['instructor']));
             $schedule = strip_tags(trim($_POST['schedule']));
 
-            $stmt = $conn->prepare("INSERT INTO lessons (title, description, objectives, duration_weeks, fee_type, fee, instructor, schedule, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-            $stmt->bind_param("sssisdss", $title, $description, $objectives, $duration_weeks, $fee_type, $fee, $instructor, $schedule);
+            $stmt = $conn->prepare("INSERT INTO lessons (title, description, duration_weeks, fee_type, fee, instructor, schedule, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt->bind_param("ssisdss", $title, $description, $duration_weeks, $fee_type, $fee, $instructor, $schedule);
             $statusMsg = $stmt->execute() ? "Lesson added successfully!" : "Error adding lesson: " . $conn->error;
 
         } elseif ($_POST['action'] === 'enroll_student') {
@@ -63,16 +55,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user_id = filter_input(INPUT_POST, 'user_id', FILTER_SANITIZE_NUMBER_INT);
             $payment_status = ucfirst(strip_tags(trim($_POST['payment_status'])));
 
-            $stmt = $conn->prepare("SELECT name, email FROM users WHERE id = ? AND role = 'user'");
+            $stmt = $conn->prepare("SELECT name, email, role FROM users WHERE id = ?");
             $stmt->bind_param("i", $user_id);
             $stmt->execute();
             $user = $stmt->get_result()->fetch_assoc();
 
             if (!$user) {
-                $statusMsg = "Selected user not found or not a student.";
+                $statusMsg = "Selected user not found.";
             } else {
                 $full_name = $user['name'];
                 $email = $user['email'];
+                $user_role = strtolower($user['role']);
 
                 $stmt = $conn->prepare("SELECT id FROM enrollments WHERE email = ? AND lesson_id = ?");
                 $stmt->bind_param("si", $email, $lesson_id);
@@ -88,24 +81,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $lesson = $stmt->get_result()->fetch_assoc();
 
                     if ($lesson && $lesson['fee_type'] === 'Paid' && strtolower($payment_status) !== 'Paid') {
-                        $statusMsg = "This is a paid lesson. Confirm payment before enrolling.";
-                    } else {
-                        $stmt = $conn->prepare("INSERT INTO enrollments (full_name, email, lesson_id, enrolled_at, payment_status, progress, completion_status) VALUES (?, ?, ?, NOW(), ?, 0, 'Not Started')");
+                        if ($user_role === 'admin' || $user_role === 'staff') {
+                            $statusMsg = "This is a paid lesson. Confirm payment before enrolling.";
+                        } else {
+                            echo "<script>
+                                if (!confirm('This is a paid lesson but payment is marked as " . $payment_status . ". Do you still want to proceed with enrollment?')) {
+                                    window.history.back();
+                                }
+                            </script>";
+                        }
+                    }
+
+                    if (!isset($statusMsg)) {
+                        $stmt = $conn->prepare("INSERT INTO enrollments (full_name, email, lesson_id, enrolled_at, status, progress, completion_status) VALUES (?, ?, ?, NOW(), ?, 0, 'Not Started')");
                         $stmt->bind_param("ssis", $full_name, $email, $lesson_id, $payment_status);
 
                         if ($stmt->execute()) {
                             $statusMsg = "Student enrolled successfully!";
 
-                            // Prepare email content
                             $subject = "Lesson Enrollment Confirmation - Smart Printing";
                             $message = "<html><head><title>Enrollment Confirmation</title></head><body style='font-family: Arial, sans-serif;'>
-                                        <h2>Hello {$full_name},</h2>
-                                        <p>You have been successfully enrolled in the lesson: <strong>{$lesson['title']}</strong>.</p>
-                                        <p>You can now access the learning materials and begin your course.</p>
-                                        <p>Thank you,<br><strong>Smart Printing Team</strong></p>
-                                        </body></html>";
+                                <h2>Hello {$full_name},</h2>
+                                <p>You have been successfully enrolled in the lesson: <strong>{$lesson['title']}</strong>.</p>
+                                <p>You can now access the learning materials and begin your course.</p>
+                                <p>Thank you,<br><strong>Smart Printing Team</strong></p>
+                                </body></html>";
 
-                            // Send email with PHPMailer function
                             $emailSent = sendNotificationEmailPHPMailer($email, $full_name, $subject, $message);
 
                             if (!$emailSent) {
@@ -123,26 +124,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("DELETE FROM lessons WHERE id = ?");
             $stmt->bind_param("i", $id);
             $statusMsg = $stmt->execute() ? "Lesson deleted successfully!" : "Error deleting lesson: " . $conn->error;
-
-        } elseif ($_POST['action'] === 'delete_enrollment') {
-            $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
-            $stmt = $conn->prepare("DELETE FROM enrollments WHERE id = ?");
-            $stmt->bind_param("i", $id);
-            $statusMsg = $stmt->execute() ? "Enrollment deleted successfully!" : "Error deleting enrollment: " . $conn->error;
-
-        } elseif ($_POST['action'] === 'update_lesson') {
-            $id = filter_input(INPUT_POST, 'id', FILTER_SANITIZE_NUMBER_INT);
-            $title = strip_tags(trim($_POST['title']));
-            $description = strip_tags(trim($_POST['description']));
-            $duration_weeks = filter_input(INPUT_POST, 'duration_weeks', FILTER_SANITIZE_NUMBER_INT);
-            $fee_type = strip_tags(trim($_POST['fee_type']));
-            $fee = ($fee_type === 'Free') ? 0 : filter_input(INPUT_POST, 'fee', FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-            $instructor = strip_tags(trim($_POST['instructor']));
-            $schedule = strip_tags(trim($_POST['schedule']));
-
-            $stmt = $conn->prepare("UPDATE lessons SET title = ?, description = ?, duration_weeks = ?, fee_type = ?, fee = ?, instructor = ?, schedule = ? WHERE id = ?");
-            $stmt->bind_param("ssisdssi", $title, $description, $duration_weeks, $fee_type, $fee, $instructor, $schedule, $id);
-            $statusMsg = $stmt->execute() ? "Lesson updated successfully!" : "Error updating lesson: " . $conn->error;
 
         } elseif ($_POST['action'] === 'update_progress') {
             $enrollment_id = filter_input(INPUT_POST, 'enrollment_id', FILTER_SANITIZE_NUMBER_INT);

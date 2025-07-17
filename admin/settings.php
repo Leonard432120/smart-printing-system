@@ -1,8 +1,6 @@
 <?php
-// Enable error reporting for debugging (remove in production)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-
 session_start();
 
 // Restrict access to admin only
@@ -12,14 +10,13 @@ if (!isset($_SESSION['users']) || strtolower($_SESSION['users']['role']) !== 'ad
 }
 
 include 'includes/functions.php';
-
-// DB connection — use your existing db_connect.php config
 include __DIR__ . '/../user/includes/db_connect.php';
+
 if ($conn->connect_error) {
     die("DB Connection failed: " . $conn->connect_error);
 }
 
-// Load PayChangu API key from config file
+// Load PayChangu API key
 $configFile = __DIR__ . '/../config.php';
 $paychanguApiKey = '';
 if (file_exists($configFile)) {
@@ -30,31 +27,32 @@ if (file_exists($configFile)) {
 $statusMsg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_settings') {
-    // Sanitize inputs
-    $siteName = trim(filter_input(INPUT_POST, 'site_name', FILTER_SANITIZE_SPECIAL_CHARS));
-    $contactEmail = trim(filter_input(INPUT_POST, 'contact_email', FILTER_SANITIZE_EMAIL));
-    $address = trim(filter_input(INPUT_POST, 'address', FILTER_SANITIZE_SPECIAL_CHARS));
-    $whatsappNumber = trim(filter_input(INPUT_POST, 'whatsapp_number', FILTER_SANITIZE_SPECIAL_CHARS));
-    $siteTimezone = trim(filter_input(INPUT_POST, 'site_timezone', FILTER_SANITIZE_SPECIAL_CHARS));
-    $footerText = trim(filter_input(INPUT_POST, 'footer_text', FILTER_SANITIZE_SPECIAL_CHARS));
+    // Raw inputs
+    $siteName = trim($_POST['site_name'] ?? '');
+    $contactEmailRaw = $_POST['contact_email'] ?? '';
+    $contactEmail = trim($contactEmailRaw);
+    $address = trim($_POST['address'] ?? '');
+    $whatsappNumber = trim($_POST['whatsapp_number'] ?? '');
+    $siteTimezone = trim($_POST['site_timezone'] ?? '');
+    $footerText = trim($_POST['footer_text'] ?? '');
     $maintenanceMode = (isset($_POST['maintenance_mode']) && $_POST['maintenance_mode'] === '1') ? 1 : 0;
-    $paychanguApiKeyNew = trim(filter_input(INPUT_POST, 'paychangu_api_key', FILTER_SANITIZE_SPECIAL_CHARS));
+    $paychanguApiKeyNew = trim($_POST['paychangu_api_key'] ?? '');
 
-    // Validate inputs
+    // Validate input
     if (empty($siteName)) {
         $statusMsg = "Site name is required.";
     } elseif (!filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
         $statusMsg = "Invalid contact email format.";
     }
 
-    // Handle logo upload only if no previous errors
+    // Handle logo upload
     $logoPath = '';
     if (empty($statusMsg) && isset($_FILES['logo']) && $_FILES['logo']['error'] !== UPLOAD_ERR_NO_FILE) {
         $allowedTypes = ['image/jpeg', 'image/png'];
-        $fileType = $_FILES['logo']['type'] ?? '';
-        $fileSize = $_FILES['logo']['size'] ?? 0;
+        $fileType = $_FILES['logo']['type'];
+        $fileSize = $_FILES['logo']['size'];
         $uploadDir = __DIR__ . '/../assets/images/';
-        $fileTmpName = $_FILES['logo']['tmp_name'] ?? '';
+        $fileTmpName = $_FILES['logo']['tmp_name'];
 
         if (!in_array($fileType, $allowedTypes)) {
             $statusMsg = "Invalid logo file format. Only JPEG and PNG allowed.";
@@ -62,85 +60,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
             $statusMsg = "Logo file size exceeds 2MB limit.";
         } elseif (!is_writable($uploadDir)) {
             $statusMsg = "Upload directory is not writable.";
-        } elseif (!move_uploaded_file($fileTmpName, $uploadDir . basename($_FILES['logo']['name']))) {
-            $statusMsg = "Failed to upload logo file.";
         } else {
-            // Sanitize file name and build web path
             $safeFileName = 'logo_' . time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', basename($_FILES['logo']['name']));
-            rename($uploadDir . basename($_FILES['logo']['name']), $uploadDir . $safeFileName);
-            $logoPath = "/smart-printing-system/assets/images/$safeFileName";
+            if (!move_uploaded_file($fileTmpName, $uploadDir . $safeFileName)) {
+                $statusMsg = "Failed to upload logo file.";
+            } else {
+                $logoPath = "/smart-printing-system/assets/images/$safeFileName";
+            }
         }
     }
 
     if (empty($statusMsg)) {
-        // If no new logo uploaded, fetch existing logo path from DB
+        // If no new logo, get current one
         if (empty($logoPath)) {
             $resLogo = $conn->query("SELECT logo_path FROM settings WHERE id = 1 LIMIT 1");
-            if ($resLogo && $resLogo->num_rows > 0) {
-                $logoPath = $resLogo->fetch_assoc()['logo_path'];
-            } else {
-                $logoPath = '';
-            }
+            $logoPath = ($resLogo && $resLogo->num_rows > 0) ? $resLogo->fetch_assoc()['logo_path'] : '';
         }
 
-        // Save/update settings table
+        // Save settings
         $existsRes = $conn->query("SELECT id FROM settings WHERE id = 1");
         if ($existsRes && $existsRes->num_rows > 0) {
-            $stmt = $conn->prepare("UPDATE settings SET business_name = ?, logo_path = ?, contact = ?, address = ?, whatsapp_number = ?, site_timezone = ?, footer_text = ?, maintenance_mode = ?, updated_at = NOW() WHERE id = 1");
-            $stmt->bind_param('sssssssi', $siteName, $logoPath, $contactEmail, $address, $whatsappNumber, $siteTimezone, $footerText, $maintenanceMode);
+           $stmt = $conn->prepare("UPDATE settings SET business_name = ?, logo_path = ?, contact_email = ?, address = ?, phone = ?, site_timezone = ?, footer_text = ?, maintenance_mode = ?, updated_at = NOW() WHERE id = 1");
+           $stmt->bind_param('sssssssi', $siteName, $logoPath, $contactEmail, $address, $whatsappNumber, $siteTimezone, $footerText, $maintenanceMode);
+
         } else {
-            $stmt = $conn->prepare("INSERT INTO settings (id, business_name, logo_path, contact, address, whatsapp_number, site_timezone, footer_text, maintenance_mode, updated_at) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+            $stmt = $conn->prepare("INSERT INTO settings (id, business_name, logo_path, contact_email, address, phone, site_timezone, footer_text, maintenance_mode, updated_at) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
             $stmt->bind_param('sssssssi', $siteName, $logoPath, $contactEmail, $address, $whatsappNumber, $siteTimezone, $footerText, $maintenanceMode);
         }
 
-        if ($stmt) {
-            if (!$stmt->execute()) {
-                $statusMsg = "Failed to save settings: " . $stmt->error;
-            } else {
-                $statusMsg = "Settings updated successfully!";
-            }
-            $stmt->close();
+        if (!$stmt->execute()) {
+            $statusMsg = "Failed to save settings: " . $stmt->error;
         } else {
-            $statusMsg = "Failed to prepare settings query: " . $conn->error;
+            $statusMsg = "Settings updated successfully!";
         }
+        $stmt->close();
     }
 
-    // Save PayChangu API key config if changed
+    // Update PayChangu API key file
     if (empty($statusMsg) && !empty($paychanguApiKeyNew)) {
-        $apiKeyContent = "<?php\n";
-        $apiKeyContent .= "define('PAYCHANGU_API_KEY', '" . addslashes($paychanguApiKeyNew) . "');\n";
-        $apiKeyContent .= "?>";
+        $apiKeyContent = "<?php\ndefine('PAYCHANGU_API_KEY', '" . addslashes($paychanguApiKeyNew) . "');\n?>";
         if (!file_put_contents($configFile, $apiKeyContent)) {
             $statusMsg = "Failed to write PayChangu API key to config file.";
         }
     }
 }
 
-// Fetch latest settings for the form
+// Load settings
 $settings = [
-    'business_name' => 'Mungu Ni Dawa',
-    'logo_path' => '/smart-printing-system/assets/images/MND.jpeg',
-    'contact' => 'info@mungunidawa.mw',
+    'business_name' => 'Smart Printing',
+    'logo_path' => '/smart-printing-system/assets/images/logo.png',
+    'contact_email' => '',
     'address' => '',
     'whatsapp_number' => '',
     'site_timezone' => 'Africa/Blantyre',
-    'footer_text' => '© 2025 Mungu Ni Dawa',
+    'footer_text' => '© ' . date('Y') . ' Smart Printing System',
     'maintenance_mode' => 0,
 ];
-$resSettings = $conn->query("SELECT business_name, logo_path, contact, address, whatsapp_number, site_timezone, footer_text, maintenance_mode FROM settings WHERE id = 1 LIMIT 1");
+$resSettings = $conn->query("SELECT business_name, logo_path, contact_email, address, phone, site_timezone, footer_text, maintenance_mode FROM settings WHERE id = 1 LIMIT 1");
 if ($resSettings && $resSettings->num_rows > 0) {
-    $settings = $resSettings->fetch_assoc();
+   $row = $resSettings->fetch_assoc();
+$settings = [
+    'business_name' => $row['business_name'],
+    'logo_path' => $row['logo_path'],
+    'contact_email' => $row['contact_email'],
+    'address' => $row['address'],
+    'whatsapp_number' => $row['phone'], // map correctly here
+    'site_timezone' => $row['site_timezone'],
+    'footer_text' => $row['footer_text'],
+    'maintenance_mode' => $row['maintenance_mode']
+];
+
 }
 ?>
 
+<!-- HTML Below (Unchanged CSS) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Settings | Smart Printing</title>
-<link rel="stylesheet" href="/smart-printing-system/assets/css/admin_style.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Settings | Smart Printing</title>
+  <link rel="stylesheet" href="/smart-printing-system/assets/css/admin_style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    
 <style>
     .settings-form {
         background: #fff;
@@ -198,96 +202,89 @@ if ($resSettings && $resSettings->num_rows > 0) {
         /* Your sidebar styles here if needed */
     }
 </style>
-</head>
-<body>
 <div class="admin-wrapper">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="logo">
-            <img src="<?php echo htmlspecialchars($settings['logo_path'] ?? '/smart-printing-system/assets/images/MND.jpeg'); ?>" alt="Logo" class="logo-img" />
-            <span><?php echo htmlspecialchars($settings['business_name'] ?? 'Mungu Ni Dawa'); ?></span>
-        </div>
-        <a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="manage_lessons.php"><i class="fas fa-book"></i> Lessons</a>
-        <a href="manage_prices.php"><i class="fas fa-tag"></i> Prices</a>
-        <a href="manage_services.php"><i class="fas fa-cogs"></i> Services</a>
-        <a href="manage_students.php"><i class="fas fa-user-graduate"></i> Students</a>
-        <a href="manage_transactions.php"><i class="fas fa-credit-card"></i> Transactions</a>
-        <a href="manage_users.php"><i class="fas fa-users"></i> Users</a>
-        <a href="report.php"><i class="fas fa-file-alt"></i> Report</a>
-        <a href="settings.php" class="active"><i class="fas fa-cog"></i> Settings</a>
-        <a href="../logout.php" style="color: red;" onclick="return confirm('Are you sure you want to logout?');"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  <div class="sidebar">
+    <div class="logo">
+      <img src="<?php echo htmlspecialchars($settings['logo_path']); ?>" alt="Logo" class="logo-img" />
+      <span><?php echo htmlspecialchars($settings['business_name']); ?></span>
     </div>
+    <a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="manage_lessons.php"><i class="fas fa-book"></i> Lessons</a>
+    <a href="manage_prices.php"><i class="fas fa-tag"></i> Prices</a>
+    <a href="manage_services.php"><i class="fas fa-cogs"></i> Services</a>
+    <a href="manage_students.php"><i class="fas fa-user-graduate"></i> Students</a>
+    <a href="manage_transactions.php"><i class="fas fa-credit-card"></i> Transactions</a>
+    <a href="manage_users.php"><i class="fas fa-users"></i> Users</a>
+    <a href="report.php"><i class="fas fa-file-alt"></i> Report</a>
+    <a href="settings.php" class="active"><i class="fas fa-cog"></i> Settings</a>
+    <a href="../logout.php" style="color: red;" onclick="return confirm('Are you sure you want to logout?');"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <header class="dashboard-header">
-            <div class="header-content">
-                <h1><i class="fas fa-cog"></i> Settings</h1>
-                <p>Manage system configurations for Mungu Ni Dawa.</p>
-            </div>
-            <div class="user-profile">
-                <i class="fas fa-user-circle"></i>
-                <span><?php echo htmlspecialchars($_SESSION['users']['username'] ?? ''); ?></span>
-            </div>
-        </header>
+  <div class="main-content">
+    <header class="dashboard-header">
+      <div class="header-content">
+        <h1><i class="fas fa-cog"></i> Settings</h1>
+        <p>Manage system configurations.</p>
+      </div>
+      <div class="user-profile">
+        <i class="fas fa-user-circle"></i>
+        <span><?php echo htmlspecialchars($_SESSION['users']['username']); ?></span>
+      </div>
+    </header>
 
-        <?php if (!empty($statusMsg)): ?>
-            <div class="status-msg <?php echo (stripos($statusMsg, 'success') !== false) ? 'success' : 'error'; ?>">
-                <?php echo htmlspecialchars($statusMsg); ?>
-            </div>
-        <?php endif; ?>
+    <?php if (!empty($statusMsg)): ?>
+      <div class="status-msg <?php echo (stripos($statusMsg, 'success') !== false) ? 'success' : 'error'; ?>">
+        <?php echo htmlspecialchars($statusMsg); ?>
+      </div>
+    <?php endif; ?>
 
-        <form method="POST" enctype="multipart/form-data" class="settings-form" novalidate>
-            <input type="hidden" name="action" value="update_settings" />
+    <form method="POST" enctype="multipart/form-data" class="settings-form">
+      <input type="hidden" name="action" value="update_settings" />
 
-            <h2>System Settings</h2>
+      <h2>System Settings</h2>
 
-            <h3>Site Settings</h3>
-            <label for="site_name">Site Name</label>
-            <input type="text" id="site_name" name="site_name" required
-                value="<?php echo htmlspecialchars($settings['business_name'] ?? ''); ?>" />
+      <label for="site_name">Site Name</label>
+      <input type="text" id="site_name" name="site_name" required value="<?php echo htmlspecialchars($settings['business_name']); ?>" />
 
-            <label for="logo">Site Logo</label>
-            <?php if (!empty($settings['logo_path'])): ?>
-                <img src="<?php echo htmlspecialchars($settings['logo_path']); ?>" alt="Current Logo" class="current-logo" />
-            <?php endif; ?>
-            <input type="file" id="logo" name="logo" accept="image/jpeg,image/png" />
+      <label for="logo">Site Logo</label>
+      <?php if (!empty($settings['logo_path'])): ?>
+        <img src="<?php echo htmlspecialchars($settings['logo_path']); ?>" alt="Logo" class="current-logo" />
+      <?php endif; ?>
+      <input type="file" id="logo" name="logo" accept="image/jpeg,image/png" />
 
-            <label for="contact_email">Contact Email</label>
-            <input type="email" id="contact_email" name="contact_email" required
-                value="<?php echo htmlspecialchars($settings['contact'] ?? ''); ?>" />
+      <label for="contact_email">Contact Email</label>
+      <input type="email" id="contact_email" name="contact_email"  value="<?php echo htmlspecialchars($settings['contact_email']); ?>" />
 
-            <label for="address">Address</label>
-            <textarea id="address" name="address" rows="3"><?php echo htmlspecialchars($settings['address'] ?? ''); ?></textarea>
+      <label for="address">Address</label>
+      <textarea id="address" name="address"><?php echo htmlspecialchars($settings['address']); ?></textarea>
 
-            <label for="whatsapp_number">WhatsApp Number</label>
-            <input type="text" id="whatsapp_number" name="whatsapp_number"
-                value="<?php echo htmlspecialchars($settings['whatsapp_number'] ?? ''); ?>" />
+      <label for="whatsapp_number">WhatsApp Number</label>
+      <input type="text" id="whatsapp_number" name="whatsapp_number" value="<?php echo htmlspecialchars($settings['whatsapp_number']); ?>" />
 
-            <label for="site_timezone">Site Timezone</label>
-            <input type="text" id="site_timezone" name="site_timezone" placeholder="e.g. Africa/Blantyre"
-                value="<?php echo htmlspecialchars($settings['site_timezone'] ?? 'Africa/Blantyre'); ?>" />
+      <label for="site_timezone">Site Timezone</label>
+      <input type="text" id="site_timezone" name="site_timezone" value="<?php echo htmlspecialchars($settings['site_timezone']); ?>" />
 
-            <label for="footer_text">Footer Text</label>
-            <input type="text" id="footer_text" name="footer_text"
-                value="<?php echo htmlspecialchars($settings['footer_text'] ?? '© 2025 Mungu Ni Dawa'); ?>" />
+      <label for="footer_text">Footer Text</label>
+      <input type="text" id="footer_text" name="footer_text" value="<?php echo htmlspecialchars($settings['footer_text']); ?>" />
 
-            <label for="maintenance_mode">Maintenance Mode</label>
-            <select id="maintenance_mode" name="maintenance_mode">
-                <option value="0" <?php if (($settings['maintenance_mode'] ?? '0') === '0') echo 'selected'; ?>>Off</option>
-                <option value="1" <?php if (($settings['maintenance_mode'] ?? '0') === '1') echo 'selected'; ?>>On</option>
-            </select>
+      <label for="maintenance_mode">Maintenance Mode</label>
+      <select id="maintenance_mode" name="maintenance_mode">
+        <option value="0" <?php echo ($settings['maintenance_mode'] == 0) ? 'selected' : ''; ?>>Off</option>
+        <option value="1" <?php echo ($settings['maintenance_mode'] == 1) ? 'selected' : ''; ?>>On</option>
+      </select>
 
-            <h3>Payment Settings</h3>
-            <label for="paychangu_api_key">PayChangu API Key</label>
-            <input type="password" id="paychangu_api_key" name="paychangu_api_key"
-                placeholder="Enter new API key or leave blank to keep current" />
+      <label for="paychangu_api_key">PayChangu API Key</label>
+      <input type="password" id="paychangu_api_key" name="paychangu_api_key" placeholder="Enter new API key or leave blank" />
 
-            <button type="submit">Update Settings</button>
-        </form>
-    </div>
+      <button type="submit">Update Settings</button>
+    </form>
+  </div>
 </div>
 <?php include 'includes/footer.php'; ?>
 </body>
 </html>
+
+
+
+
+
