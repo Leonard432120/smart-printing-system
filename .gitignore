@@ -1,0 +1,24 @@
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore PHP error logs and debug files
+*.log
+*.txt
+
+# Ignore uploads and user-generated files (adjust as needed)
+uploads/
+user/uploads/
+
+# Ignore IDE/editor config files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Ignore composer vendor directory (if you use Composer)
+vendor/
+
+# Ignore environment config files with sensitive info
+.env
+config.php
