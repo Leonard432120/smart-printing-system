@@ -5,12 +5,13 @@ include 'includes/header.php';
 
 $tx_ref = $_GET['tx_ref'] ?? '';
 $lesson_id = isset($_GET['lesson_id']) ? intval($_GET['lesson_id']) : 0;
-$order_id  = isset($_GET['order_id'])  ? intval($_GET['order_id'])  : 0;
+$order_id = isset($_GET['order_id']) ? intval($_GET['order_id']) : 0;
+$document_id = isset($_GET['document_id']) ? intval($_GET['document_id']) : 0;
 
 $userName = $_SESSION['users']['name'] ?? 'User';
 $type = '';
 $title = '';
-$backLink = '#';
+$backLink = 'index.php'; // Default to home
 
 // 🟩 LESSON Payment
 if ($lesson_id > 0) {
@@ -25,7 +26,6 @@ if ($lesson_id > 0) {
     }
     $stmt->close();
 }
-
 // 🟦 ORDER Payment
 elseif ($order_id > 0) {
     $stmt = $conn->prepare("
@@ -38,16 +38,43 @@ elseif ($order_id > 0) {
     $stmt->execute();
     $res = $stmt->get_result();
     if ($row = $res->fetch_assoc()) {
-        $title = $row['service_name']; // will now be like "Photocopying and printing"
+        $title = $row['service_name'];
         $type = 'order';
         $backLink = 'status.php';
-    } else {
-        $title = "Unknown Service";
+    }
+    $stmt->close();
+}
+// 🟪 DOCUMENT Payment
+elseif ($document_id > 0) {
+    $stmt = $conn->prepare("
+        SELECT original_filename, reference_code 
+        FROM transactions 
+        WHERE id = ?
+    ");
+    $stmt->bind_param("i", $document_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        $title = $row['original_filename'];
+        $tx_ref = $row['reference_code'] ?? $tx_ref;
+        $type = 'document';
+        $backLink = 'status.php';
     }
     $stmt->close();
 }
 
-
+// Get payment amount if available
+$amount = 0;
+if ($tx_ref) {
+    $stmt = $conn->prepare("SELECT amount FROM payments WHERE transaction_id = ?");
+    $stmt->bind_param("s", $tx_ref);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($row = $res->fetch_assoc()) {
+        $amount = $row['amount'];
+    }
+    $stmt->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -93,6 +120,11 @@ elseif ($order_id > 0) {
             font-size: 1.1rem;
             margin: 10px 0;
         }
+        .success-box .amount {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #0a3d62;
+        }
         .success-box a {
             margin-top: 20px;
             display: inline-block;
@@ -106,18 +138,39 @@ elseif ($order_id > 0) {
         .success-box a:hover {
             background-color: #064173;
         }
+        .file-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
 
 <main>
 <div class="success-box">
-    <h1>✅ Payment Successful</h1>
-   <p><strong><?= htmlspecialchars($userName) ?></strong>, your payment for the
-    <?= $type === 'lesson' ? 'lesson' : ($type === 'order' ? 'service order' : 'item') ?>:</p>
-<p><strong>"<?= htmlspecialchars($title ?: 'N/A') ?>"</strong></p>
-    <p>was successful!</p>
+    <div class="file-icon">✅</div>
+    <h1>Payment Successful</h1>
+    <p><strong><?= htmlspecialchars($userName) ?></strong>, your payment was successful!</p>
+    
+    <?php if ($type === 'lesson'): ?>
+        <p>You have purchased the lesson:</p>
+        <p><strong>"<?= htmlspecialchars($title ?: 'N/A') ?>"</strong></p>
+    <?php elseif ($type === 'order'): ?>
+        <p>You have paid for the service:</p>
+        <p><strong>"<?= htmlspecialchars($title ?: 'N/A') ?>"</strong></p>
+    <?php elseif ($type === 'document'): ?>
+        <p>Your document printing order:</p>
+        <p><strong>"<?= htmlspecialchars($title ?: 'N/A') ?>"</strong></p>
+    <?php else: ?>
+        <p>Your payment was processed successfully.</p>
+    <?php endif; ?>
+    
+    <?php if ($amount > 0): ?>
+        <p class="amount">Amount Paid: MWK <?= number_format($amount, 2) ?></p>
+    <?php endif; ?>
+    
     <p>Transaction Ref: <strong><?= htmlspecialchars($tx_ref) ?></strong></p>
+    
     <a href="<?= $backLink ?>">🔙 Go Back</a>
 </div>
 </main>

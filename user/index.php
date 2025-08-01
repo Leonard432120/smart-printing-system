@@ -46,6 +46,10 @@ if (session_status() === PHP_SESSION_NONE) {
         <div class="icon-box"><i class="fas fa-book"></i></div>
         <div><strong>Enroll in Lessons:</strong> Register for computer classes easily.</div>
       </li>
+       <li>
+        <div class="icon-box"><i class="fas fa-book"></i></div>
+        <div><strong></strong> Register for computer classes easily.</div>
+      </li>
       <li>
         <div class="icon-box"><i class="fab fa-whatsapp"></i></div>
         <div><strong>WhatsApp Support:</strong> Chat with us directly or email us.</div>
@@ -55,6 +59,8 @@ if (session_status() === PHP_SESSION_NONE) {
     <!-- 🔗 Action Buttons -->
     <div class="hero-buttons">
       <a href="upload.php">📤 Upload Document</a>
+      <a href="library.php">Books</a>
+      <a href="land_listing.php">Land</a>
       <a href="status.php">📈 Track Status</a>
       <a href="lessons.php">📚 Enroll in Lesson</a>
       <a href="https://wa.me/265984487611?text=Hi%20Smart%20Printing%2C%20I%20need%20help%20with%20printing" target="_blank" rel="noopener noreferrer">

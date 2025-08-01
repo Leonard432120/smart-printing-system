@@ -35,6 +35,7 @@ include 'includes/load_settings.php';
       <a href="manage_lessons.php"><i class="fas fa-book"></i> Lessons</a>
       <a href="manage_prices.php"><i class="fas fa-tag"></i> Prices</a>
       <a href="manage_services.php"><i class="fas fa-cogs"></i> Services</a>
+      <a href="/smart-printing-system/admin/manage_uploads.php"><i class="fas fa-print"></i> Printing</a>
       <a href="manage_students.php"><i class="fas fa-user-graduate"></i> Students</a>
       <a href="manage_transactions.php"><i class="fas fa-credit-card"></i> Transactions</a>
       <a href="manage_users.php"><i class="fas fa-users"></i> Users</a>
@@ -108,6 +109,7 @@ include 'includes/load_settings.php';
           <a href="lessons/class.php" class="action-btn"><i class="fas fa-chart-line"></i> Classes</a>
           <a href="manage_transactions.php" class="action-btn"><i class="fas fa-credit-card"></i> Transactions</a>
           <a href="reports.php" class="action-btn"><i class="fas fa-chart-line"></i> Reports</a>
+          <a href="admin_land.php" class="action-btn"><i class="fas fa-chart-line"></i> Manage Land</a>
         </div>
       </div>
     </div>

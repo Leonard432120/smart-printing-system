@@ -19,20 +19,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $copies = intval($_POST['copies']);
   $color = $_POST['color'];
   $size = $_POST['size'];
-  $contact = $_SESSION['users']['phone']; // ✅ Get contact from session
+  $contact = $_SESSION['users']['phone'];
+  $user_id = $_SESSION['users']['id'];
+  $service_id = null; // For manual uploads not tied to a service
 
   $file = $_FILES['document'];
   $allowedTypes = ['pdf', 'docx', 'jpg', 'png'];
   $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
-  // === Calculate Price Per Copy Based on Size and Color ===
-  $priceQuery = $conn->prepare("SELECT price FROM prices WHERE page_size = ? ");
-  $priceQuery->bind_param("s", $size );
+  // === Price Lookup ===
+  $priceQuery = $conn->prepare("SELECT price FROM prices WHERE page_size = ?");
+  $priceQuery->bind_param("s", $size);
   $priceQuery->execute();
   $priceResult = $priceQuery->get_result();
 
   if ($priceResult->num_rows === 0) {
-    $error = "Price for selected size and color not found.";
+    $error = "Price for selected size not found.";
   } else {
     $priceData = $priceResult->fetch_assoc();
     $pricePerCopy = floatval($priceData['price']);
@@ -41,50 +43,75 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (!in_array($ext, $allowedTypes)) {
       $error = "Only PDF, DOCX, JPG, or PNG files are allowed.";
     } else {
-      $newFileName = uniqid('print_', true) . '.' . $ext;
-      $uploadDir = 'uploads/';
+      // Sanitize and generate filename
+      $originalName = pathinfo($file['name'], PATHINFO_FILENAME);
+      $safeName = preg_replace('/[^a-zA-Z0-9-_]/', '_', $originalName);
+      $newFileName = 'print_' . uniqid() . '_' . substr($safeName, 0, 50) . '.' . $ext;
+      $originalFileName = $originalName . '.' . $ext;
+
+      // Set upload paths
+      $uploadDir = 'C:/wamp64/www/smart-printing-system/uploads/notes/';
+      $webPath = '/smart-printing-system/uploads/notes/' . $newFileName;
+
+      // Create directory if it doesn't exist
+      if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+      }
+
       $uploadPath = $uploadDir . $newFileName;
 
-      if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-        $stmt = $conn->prepare("
-          INSERT INTO transactions 
-            (user_id, customer_name, customer_contact, reference_code, file_name, copies, color_type, page_size, total_amount, status) 
-          VALUES 
-            (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Uploaded')
-        ");
-        $stmt->bind_param(
-          "issssissd",
-          $_SESSION['users']['id'],
-          $name,
-          $contact,
-          $ref,
-          $newFileName,
-          $copies,
-          $color,
-          $size,
-          $totalAmount
-        );
+ // Inside the file upload success block, after move_uploaded_file()
+if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+    $status = 'Uploaded';
+    
+    $stmt = $conn->prepare("
+        INSERT INTO transactions 
+        (user_id, customer_name, customer_contact, reference_code, 
+         file_name, original_filename, copies, color_type, page_size, 
+         total_amount, service_id, amount, status) 
+        VALUES 
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ");
+    
+    $stmt->bind_param(
+        "isssssisdddsd",
+        $user_id, $name, $contact, $ref,
+        $webPath, $originalFileName, $copies, $color,
+        $size, $totalAmount, $service_id, $totalAmount, $status
+    );
 
-        if ($stmt->execute()) {
-          $success = "🎉 Document uploaded successfully!";
-        } else {
-          $error = "Failed to save the transaction.";
+    if ($stmt->execute()) {
+        $transaction_id = $conn->insert_id;
+        $_SESSION['pay_for_document'] = $transaction_id;
+        header("Location: pay_document.php?transaction_id=$transaction_id");
+        exit();
+    } else {
+        $error = "Failed to save the transaction: " . $conn->error;
+        if (file_exists($uploadPath)) {
+            unlink($uploadPath);
         }
-      } else {
-        $error = "Upload failed. Try again.";
-      }
+    }
+} else {
+    $error = "Upload failed. Try again.";
+}
     }
   }
 }
 ?>
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Upload Document | Smart Printing</title>
   <link rel="stylesheet" href="/smart-printing-system/assets/css/admin.css" />
+  
+ <style>
+    .error { color: red; margin: 10px 0; }
+    .success { color: green; margin: 10px 0; font-weight: bold; }
+    .auth-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    form input, form select { width: 100%; padding: 10px; margin: 8px 0; }
+    button[type="submit"] { background: #0a3d62; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+  </style>
 </head>
 <body>
 
@@ -92,10 +119,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <h2>📤 Upload Your Document</h2>
 
   <?php if ($error): ?>
-    <div class="error"><?php echo $error; ?></div>
+    <div class="error"><?php echo htmlspecialchars($error); ?></div>
   <?php endif; ?>
   <?php if ($success): ?>
-    <div style="color: green; font-weight: bold;"><?php echo $success; ?></div>
+    <div style="color: green; font-weight: bold;"><?php echo htmlspecialchars($success); ?></div>
   <?php endif; ?>
 
   <form method="post" enctype="multipart/form-data">
@@ -128,3 +155,4 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 </body>
 </html>
+

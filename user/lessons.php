@@ -167,7 +167,7 @@ if ($result) {
   </style>
 </head>
 <body>
-
+<h1 class="section-title"><a href="/smart-printing-system/user/profile_complete.php">Complete profile</a></h1>
 <h1 class="section-title">Available Courses</h1>
 
 <div class="course-grid">

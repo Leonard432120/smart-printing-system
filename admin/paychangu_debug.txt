@@ -193,3 +193,23 @@ RESPONSE:
 {"status":"success","message":"Payment details retrieved successfully.","data":{"event_type":"checkout.payment","tx_ref":"TX_68775dc3d0ebe_1752653251","mode":"test","type":"API Payment (Checkout)","status":"success","number_of_attempts":1,"reference":"32245096197","currency":"MWK","amount":2000,"charges":60,"customization":{"title":"Lesson Payment - COMPUTER BASICS","description":"Payment for COMPUTER BASICS lesson","logo":null},"meta":{"lesson_id":"1","response":"Pending"},"authorization":{"channel":"Test","card_number":null,"expiry":null,"brand":null,"provider":null,"mobile_number":null,"completed_at":"2025-07-16T08:08:52.000000Z"},"customer":{"email":"leonardponjemlungu@gmail.com","first_name":"Leonardponje","last_name":"mlungu"},"logs":[],"created_at":"2025-07-16T08:07:47.000000Z","updated_at":"2025-07-16T08:07:47.000000Z"}}
 ERROR:
 
+TX_REF: TX_687a4c0739a38_1752845319
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_687a4be03da43_1752845280
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_687a35cb9dc6b_1752839627
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+
+TX_REF: TX_687a35597d208_1752839513
+RESPONSE:
+{"status":"failed","message":"Payment link not found.","data":null}
+ERROR:
+

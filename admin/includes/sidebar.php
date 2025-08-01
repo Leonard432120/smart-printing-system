@@ -28,6 +28,7 @@ if (!isset($_SESSION['users']) || $_SESSION['users']['role'] !== 'admin') {
       <a href="/smart-printing-system/admin/manage_lessons.php"><i class="fas fa-book"></i> Lessons</a>
       <a href="/smart-printing-system/admin/manage_prices.php"><i class="fas fa-tag"></i> Prices</a>
       <a href="/smart-printing-system/admin/manage_services.php"><i class="fas fa-cogs"></i> Services</a>
+      <a href="/smart-printing-system/admin/manage_uploads.php"><i class="fas fa-print"></i> Printing</a>
       <a href="/smart-printing-system/admin/manage_students.php"><i class="fas fa-user-graduate"></i> Students</a>
       <a href="/smart-printing-system/admin/manage_transactions.php"><i class="fas fa-credit-card"></i> Transactions</a>
       <a href="/smart-printing-system/admin/manage_users.php"><i class="fas fa-users"></i> Users</a>

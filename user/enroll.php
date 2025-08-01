@@ -2,62 +2,54 @@
 session_start();
 include 'includes/db_connect.php';
 
-// Redirect if user not logged in
 if (!isset($_SESSION['users'])) {
     header("Location: /smart-printing-system/admin/login.php");
     exit();
 }
 
-// Validate lesson_id param
-if (!isset($_GET['lesson_id']) || !is_numeric($_GET['lesson_id'])) {
-    echo "Invalid lesson ID.";
-    exit();
-}
-
 $lesson_id = intval($_GET['lesson_id']);
 $email = $_SESSION['users']['email'];
-$full_name = $_SESSION['users']['name'] ?? 'Unknown User';
 
-// Check if already enrolled
-$check = $conn->prepare("SELECT * FROM enrollments WHERE email = ? AND lesson_id = ?");
-$check->bind_param("si", $email, $lesson_id);
-$check->execute();
-$res = $check->get_result();
+// Check enrollment status FIRST
+$enrollment = $conn->prepare("SELECT * FROM enrollments WHERE email = ? AND lesson_id = ?");
+$enrollment->bind_param("si", $email, $lesson_id);
+$enrollment->execute();
+$enrollment_result = $enrollment->get_result();
 
-if ($res->num_rows > 0) {
-    // ✅ Already enrolled: go to lesson details
-    header("Location: lesson_details.php?lesson_id=$lesson_id&status=already_enrolled");
+// If already enrolled (by admin or otherwise), go to lesson
+if ($enrollment_result->num_rows > 0) {
+    header("Location: lesson_details.php?lesson_id=$lesson_id");
     exit();
 }
 
-// Fetch lesson details
-$stmt = $conn->prepare("SELECT * FROM lessons WHERE id = ?");
-$stmt->bind_param("i", $lesson_id);
-$stmt->execute();
-$lesson = $stmt->get_result()->fetch_assoc();
+// Get lesson details
+$lesson = $conn->prepare("SELECT * FROM lessons WHERE id = ?");
+$lesson->bind_param("i", $lesson_id);
+$lesson->execute();
+$lesson_result = $lesson->get_result()->fetch_assoc();
 
-if (!$lesson) {
-    echo "Lesson not found.";
-    exit();
+if (!$lesson_result) {
+    die("Lesson not found");
 }
 
-$fee_type = strtolower($lesson['fee_type'] ?? 'paid'); // default to paid if not set
-
-if ($fee_type === 'free') {
-    // ✅ Free lesson: enroll directly
-    $payment_status = 'Paid'; // Free = no payment needed
-
-    $insert = $conn->prepare("INSERT INTO enrollments (full_name, email, lesson_id, enrolled_at, payment_status) VALUES (?, ?, ?, NOW(), ?)");
-    $insert->bind_param("ssis", $full_name, $email, $lesson_id, $payment_status);
-    if ($insert->execute()) {
-        header("Location: lesson_details.php?lesson_id=$lesson_id&status=free_enrolled");
-        exit();
-    } else {
-        echo "Error enrolling in free lesson: " . $conn->error;
-        exit();
-    }
+// Handle based on fee type
+if (strtolower($lesson_result['fee_type']) === 'free') {
+    // Insert free enrollment
+    $insert = $conn->prepare("INSERT INTO enrollments (email, lesson_id, status, enrolled_at) VALUES (?, ?, 'Paid', NOW())");
+    $insert->bind_param("si", $email, $lesson_id);
+    $insert->execute();
+    header("Location: lesson_details.php?lesson_id=$lesson_id");
 } else {
-    // ✅ Paid lesson: user is not yet enrolled, send to pay
-    header("Location: pay_lesson.php?lesson_id=$lesson_id");
-    exit();
+    // For paid lessons, check if admin already marked as paid
+    if (isset($_SESSION['users']['role']) && in_array($_SESSION['users']['role'], ['admin', 'staff'])) {
+        // Admin/staff can bypass payment
+        $insert = $conn->prepare("INSERT INTO enrollments (email, lesson_id, status, enrolled_at) VALUES (?, ?, 'Paid', NOW())");
+        $insert->bind_param("si", $email, $lesson_id);
+        $insert->execute();
+        header("Location: lesson_details.php?lesson_id=$lesson_id");
+    } else {
+        // Regular users go to payment
+        header("Location: pay_lesson.php?lesson_id=$lesson_id");
+    }
 }
+exit();

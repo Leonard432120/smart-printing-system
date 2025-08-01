@@ -119,8 +119,8 @@ $save->execute();
       tx_ref: "<?= $tx_ref ?>",
       amount: <?= $amount ?>,
       currency: "MWK",
-      callback_url: "https://0b148b973f16.ngrok-free.app/smart-printing-system/user/verify_transaction.php",
-      return_url: "https://0b148b973f16.ngrok-free.app/smart-printing-system/user/payment_success.php",
+      callback_url: "https://75a143094b02.ngrok-free.app/smart-printing-system/user/verify_transaction.php",
+      return_url: "https://75a143094b02.ngrok-free.app/smart-printing-system/user/payment_success.php",
       customer: {
         email: "<?= $email ?>",
         first_name: "<?= explode(' ', $name)[0] ?>",
